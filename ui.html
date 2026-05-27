@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 12px; color: #1a1a1a;
+    background: #fff; padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  h1 { font-size: 14px; font-weight: 700; letter-spacing: -0.2px; }
+  p  { color: #666; line-height: 1.5; }
+
+  .drop-zone {
+    border: 2px dashed #d0d0d0; border-radius: 8px;
+    padding: 20px 16px; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    color: #888;
+  }
+  .drop-zone:hover, .drop-zone.over { border-color: #0d99ff; background: #f0f8ff; color: #0d99ff; }
+  .drop-zone input { display: none; }
+  .drop-zone .icon { font-size: 22px; margin-bottom: 6px; }
+  .drop-zone .label { font-size: 11px; }
+  .drop-zone .filename { font-weight: 600; color: #1a1a1a; font-size: 11px; margin-top: 4px; }
+
+  .options { display: flex; flex-direction: column; gap: 6px; }
+  .option  { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .option input { accent-color: #0d99ff; }
+  .option label { cursor: pointer; }
+
+  button {
+    width: 100%; padding: 9px; border-radius: 6px; border: none;
+    background: #0d99ff; color: #fff; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s;
+  }
+  button:hover:not(:disabled) { background: #0080e0; }
+  button:disabled { background: #b0d8f7; cursor: not-allowed; }
+
+  #status {
+    font-size: 11px; padding: 6px 8px; border-radius: 6px;
+    display: none;
+  }
+  #status.ok  { background: #e6f9f0; color: #1a7a4a; display: block; }
+  #status.err { background: #fdeaea; color: #c0392b; display: block; }
+  #status.working { background: #f0f8ff; color: #0d99ff; display: block; }
+</style>
+</head>
+<body>
+
+<h1>Outfitfly Import</h1>
+<p>Export <strong>outfitfly-figma.json</strong> from the prototype (Tweaks → JSON · Figma plugin), then load it here.</p>
+
+<div class="drop-zone" id="dropZone">
+  <input type="file" id="fileInput" accept=".json,application/json"/>
+  <div class="icon">📂</div>
+  <div class="label">Click to select <strong>outfitfly-figma.json</strong></div>
+  <div class="filename" id="fileName"></div>
+</div>
+
+<div class="options">
+  <label class="option">
+    <input type="checkbox" id="onlyTheme"/>
+    <span>Import only one theme:</span>
+  </label>
+  <select id="themeSelect" style="margin-left:24px; font-size:11px; padding:3px 6px; border:1px solid #ddd; border-radius:4px;">
+    <option value="">all three themes</option>
+    <option value="light">light</option>
+    <option value="dark">dark</option>
+    <option value="a11y">a11y</option>
+  </select>
+</div>
+
+<button id="importBtn" disabled>Import to Figma</button>
+<div id="status"></div>
+
+<script>
+  let jsonData = null;
+
+  const dropZone   = document.getElementById('dropZone');
+  const fileInput  = document.getElementById('fileInput');
+  const fileNameEl = document.getElementById('fileName');
+  const importBtn  = document.getElementById('importBtn');
+  const statusEl   = document.getElementById('status');
+  const onlyTheme  = document.getElementById('onlyTheme');
+  const themeSelect= document.getElementById('themeSelect');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('over');
+    const file = e.dataTransfer.files[0];
+    if (file) loadFile(file);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) loadFile(fileInput.files[0]);
+  });
+
+  function loadFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        jsonData = JSON.parse(e.target.result);
+        const count = jsonData.screens ? jsonData.screens.length : 0;
+        fileNameEl.textContent = `✓ ${file.name} — ${count} screens`;
+        importBtn.disabled = false;
+        setStatus('', '');
+      } catch (err) {
+        setStatus('err', 'Invalid JSON file: ' + err.message);
+        jsonData = null;
+        importBtn.disabled = true;
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  importBtn.addEventListener('click', () => {
+    if (!jsonData) return;
+    importBtn.disabled = true;
+
+    let screens = jsonData.screens || [];
+    if (onlyTheme.checked && themeSelect.value) {
+      screens = screens.filter(s => s.theme === themeSelect.value);
+    }
+
+    setStatus('working', `Importing ${screens.length} screens…`);
+    parent.postMessage({ pluginMessage: { type: 'import', screens } }, '*');
+  });
+
+  window.onmessage = (e) => {
+    const msg = e.data.pluginMessage;
+    if (!msg) return;
+    if (msg.type === 'done') {
+      setStatus('ok', `✓ ${msg.count} frames created on the canvas.`);
+      importBtn.disabled = false;
+    } else if (msg.type === 'error') {
+      setStatus('err', '✗ ' + msg.message);
+      importBtn.disabled = false;
+    } else if (msg.type === 'progress') {
+      setStatus('working', `Importing… ${msg.current}/${msg.total} — ${msg.label}`);
+    }
+  };
+
+  function setStatus(cls, text) {
+    statusEl.className = cls;
+    statusEl.textContent = text;
+  }
+</script>
+</body>
+</html>
