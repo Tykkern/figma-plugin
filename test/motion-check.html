@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Motion check</title>
+<style>
+  body { margin: 24px; font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; color: #1f2937; }
+  .ok { color: #15803d; } .bad { color: #b91c1c; font-weight: 700; }
+  iframe { width: 360px; height: 560px; border: 1px solid #e5e7eb; }
+</style>
+</head>
+<body>
+<!-- Serve the repo root (python -m http.server) and open /test/motion-check.html.
+     Runs the full capture (animations, hover, clicks) on examples/motion.html and checks what goes to Figma. -->
+<pre id="out">running…</pre>
+<iframe id="ui" src="../ui.html"></iframe>
+<script>
+  const out = document.getElementById('out');
+  const results = [];
+  const check = (name, ok) => results.push((ok ? '✓ ' : '✗ ') + name);
+
+  document.getElementById('ui').onload = async function () {
+    const ui = this.contentWindow;
+    try {
+      // Pure helpers
+      check('cubic-bezier parsed', ui.bezier('cubic-bezier(0.2, 0.8, 0.2, 1)').join() === '0.2,0.8,0.2,1');
+      check('keyword easings map to their curves', ui.bezier('ease-out').join() === '0,0,0.58,1' && ui.bezier('steps(4, end)').join() === '0,0,1,1');
+      check('reversed easing for the way back', ui.reverseEase([0.42, 0, 1, 1]).join() === '0,0,0.5800000000000001,1');
+      check(':hover trigger is the element under the pointer', ui.hoverTrigger('.card:hover .title') === '.card' &&
+        ui.hoverTrigger('.btn:hover::after') === '.btn' && ui.hoverTrigger(':hover') === null);
+
+      const html = await (await fetch('../examples/motion.html')).text();
+      ui.resetImages();
+      const res = await ui.captureDesign(html, { width: 1440, height: 1024, runScripts: true, motion: true, prefix: 'p0:' });
+      window.__result = { pages: [{ name: 'motion', file: 'motion.html', tree: res.tree, comps: res.comps, spec: res.spec }], images: ui.imageStore };
+
+      const all = [];
+      const walk = (n, fn) => { fn(n); (n.children || []).forEach(c => walk(c, fn)); if (n.tree) walk(n.tree, fn); };
+      walk(res.tree, n => all.push(n));
+      const comps = res.comps;
+      const byKind = k => comps.filter(c => c.kind === k);
+      const named = (k, s) => byKind(k).filter(c => c.name.indexOf(s) === 0);
+      const textIn = t => { const xs = []; walk(t, n => (n.runs || []).forEach(r => xs.push(r.text))); return xs.join(''); };
+
+      check('marquee track loops', named('loop', 'div.track').length === 1);
+      const track = named('loop', 'div.track')[0];
+      check('marquee frames move the track', track && track.states.length >= 2 && track.states[0].tree.x !== track.states[1].tree.x);
+      check('marquee restarts instantly', track && track.steps.some(s => s.from === track.states.length - 1 && s.to === 0 && s.easing === null));
+      const legs = track ? track.steps.filter(s => s.easing) : [];
+      check('marquee: 30 s linear, in steps of at most 10 s', legs.length === 3 && legs.every(s => s.duration <= 10 && s.easing.join() === '0,0,1,1') &&
+        Math.abs(legs.reduce((t, s) => t + s.duration, 0) - 30) < 0.01);
+      check('morphing orbs alternate there and back', named('loop', 'div.orb').length === 2 &&
+        named('loop', 'div.orb')[0].steps.some(s => s.from === 1 && s.to === 0 && s.duration > 0));
+      check('floating chips loop', named('loop', 'span.chip').length === 2);
+      const words = byKind('once').filter(c => /^span · /.test(c.name));
+      check('word reveal: every word plays once', words.length >= 4);
+      check('word reveal: static look first, then from below', words[0] && words[0].states[0].name === 'Статика' && words[0].steps[0].easing === null);
+      const msgs = byKind('once').filter(c => c.name.indexOf('div.msg') === 0);
+      check('chat messages pop in after their delays', msgs.length === 3 && msgs[2].steps[1].timeout === 2600);
+      check('underline (::after) draws in on its host', named('once', 'span.accent').length === 1);
+      check('progress ring (SVG) fills once', byKind('once').some(c => c.name.indexOf('svg') === 0));
+      check('button hover lifts with the page easing', byKind('hover').some(c => c.name.indexOf('a.btn') === 0 &&
+        c.steps[0].trigger === 'hover' && c.steps[0].easing.join() === '0.2,0.8,0.2,1' && c.steps[0].duration === 0.3));
+      check('pricing cards hover', named('hover', 'div.plan').length === 3);
+      check('nav links hover', byKind('hover').filter(c => c.name.indexOf('a ·') === 0).length === 4);
+
+      const pricing = byKind('click').find(c => c.name.indexOf('section#pricing') === 0);
+      check('period switch → pricing section has a clicked state', !!pricing && pricing.states.length === 2);
+      check('yearly prices in the clicked state, as overrides on the plan instances', pricing && /279/.test(textIn(pricing.states[1].tree)) &&
+        !/"tree"/.test(JSON.stringify(pricing.states[0].tree)));
+      check('"Месяц" (no effect at first) leads back', pricing && pricing.steps.some(s => s.from === 1 && s.to === 0));
+      check('"Год" is not a toggle', pricing && !pricing.steps.some(s => s.from === 1 && s.to === 0 && s.node === pricing.steps.find(x => x.from === 0).node));
+      const faq = byKind('click').filter(c => c.name.indexOf('details') === 0);
+      check('FAQ items open on click and close again', faq.length === 2 && faq.every(c => c.steps.some(s => s.from === 1 && s.to === 0)));
+      check('FAQ answer only in the open state', faq[0] && /диагнозы/.test(textIn(faq[0].states[1].tree)) && !/диагнозы/.test(textIn(faq[0].states[0].tree)));
+      const cab = byKind('click').find(c => c.name.indexOf('div.cabinet') === 0);
+      check('cabinet unlocks on "Войти"', !!cab && cab.steps[0].duration === 0.8);
+      check('plans inside the pricing state are instances', pricing && JSON.stringify(pricing.states[1].tree).indexOf('"type":"ref"') > 0);
+
+      const refs = all.filter(n => n.type === 'ref');
+      const keys = new Set(comps.map(c => c.key));
+      check('every ref on the page has a component', refs.length > 10 && refs.every(r => keys.has(r.key)));
+      check('fixed nav is flagged', all.some(n => n.fixed && /nav\.top/.test(n.name)));
+      check('anchor links and their targets', all.some(n => n.href === '#pricing') && all.some(n => n.domId === 'pricing'));
+      check('SVG filter rasterised', all.some(n => n.name === 'svg (растр)'));
+      const types = new Set(res.spec.map(r => r.type));
+      ['Липкий элемент', 'SVG-анимация (SMIL)', 'Реакция на курсор', 'Фиксированный элемент', 'Анимация', 'Наведение', 'Клик']
+        .forEach(t => check('spec lists: ' + t, types.has(t)));
+      check('steps point at existing states', comps.every(c => c.steps.every(s => c.states[s.from] && c.states[s.to])));
+      check('variant names unique per component', comps.every(c => new Set(c.states.map(s => s.name)).size === c.states.length));
+    } catch (e) {
+      results.push('✗ threw: ' + (e && e.stack || e));
+    }
+    const failed = results.filter(r => r[0] === '✗').length;
+    out.innerHTML = results.map(r => '<span class="' + (r[0] === '✓' ? 'ok' : 'bad') + '">' + r.replace(/</g, '&lt;') + '</span>').join('\n') +
+      '\n\n' + (failed ? failed + ' FAILED' : 'ALL PASSED (' + results.length + ')');
+    document.title = failed ? 'FAIL' : 'PASS';
+  };
+</script>
+</body>
+</html>

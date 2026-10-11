@@ -1,0 +1,27 @@
+{
+  "name": "figma-plugin",
+  "version": "1.0.0",
+  "description": "Figma plugin: imports any HTML page as editable layers and turns its animations, hover and click states into a prototype",
+  "license": "MIT",
+  "author": "Tykkern",
+  "homepage": "https://github.com/Tykkern/figma-plugin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tykkern/figma-plugin.git"
+  },
+  "keywords": [
+    "figma",
+    "figma-plugin",
+    "html",
+    "animation",
+    "prototype"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.109.0",
+    "typescript": "^5.7.3"
+  }
+}

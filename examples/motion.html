@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>VitaFem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#fbf9fd; --card:#f3f0fa; --ink:#3f3b4a; --mute:#7f7b8c; --dark:#3d3a44; --vita:#969DEE; --fem:#FE9D7F;
+    --brand:linear-gradient(150deg,#969DEE,#d9a3cc 55%,#FE9D7F); --line:linear-gradient(90deg,#969DEE,#FE9D7F); }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body { font: 16px/1.5 Onest, system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+  nav.top { position: fixed; top: 16px; left: 50%; translate: -50% 0; width: 1136px; z-index: 10; display: flex; align-items: center;
+    justify-content: space-between; padding: 12px 16px 12px 24px; background: rgb(255 255 255 / .8); backdrop-filter: blur(12px); border-radius: 99px; }
+  .brand { font-weight: 700; font-size: 20px; } .brand b { color: var(--vita); } .brand i { color: var(--fem); font-style: normal; }
+  .links { display: flex; gap: 28px; } .links a { color: var(--mute); transition: color .25s ease; } .links a:hover { color: var(--ink); }
+  .btn { display: inline-block; padding: 14px 26px; border-radius: 99px; font-weight: 500; transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s; }
+  .btn:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgb(61 58 68 / .18); }
+  .btn.dark { background: var(--dark); color: #fff; } .btn.light { background: #fff; color: var(--ink); }
+
+  .hero { min-height: 100vh; padding-top: 140px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
+  .eyebrow { color: var(--mute); font-size: 14px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 20px; }
+  h1 { font-size: 76px; line-height: 1.02; font-weight: 700; letter-spacing: -.02em; }
+  h1 .ln { display: block; } h1 .mute { color: var(--mute); } h1 .accent { position: relative; display: inline-block; background: var(--brand); color: #fff; padding: 0 14px; border-radius: 18px; }
+  h1 .accent::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: 6px; height: 4px; border-radius: 4px; background: #fff;
+    transform-origin: left; animation: draw 1.3s .9s cubic-bezier(.2,.8,.2,1) both; }
+  .w { display: inline-block; overflow: hidden; vertical-align: top; } .w > span { display: inline-block; animation: rise .95s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes rise { from { transform: translateY(110%); } to { transform: none; } }
+  @keyframes draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .lead { margin: 28px 0 36px; color: var(--mute); font-size: 19px; max-width: 520px; }
+  .marble { position: relative; height: 560px; border-radius: 34px; overflow: hidden; background: var(--brand); }
+  .marble svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .marble .vert { position: absolute; right: 24px; top: 40px; writing-mode: vertical-rl; color: #fff; font-size: 64px; font-weight: 700; opacity: .9; }
+  .marble .label { position: absolute; left: 28px; bottom: 24px; color: #fff; }
+  .glow { position: fixed; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgb(254 157 127 / .35), transparent 70%); pointer-events: none; left: 0; top: 0; }
+
+  .marquee { overflow: hidden; padding: 28px 0; border-block: 1px solid #e6e1ee; margin-top: 40px; }
+  .track { display: flex; gap: 48px; width: max-content; animation: slide 30s linear infinite; font-size: 28px; font-weight: 500; }
+  .track span::after { content: "✦"; margin-left: 48px; color: var(--fem); }
+  @keyframes slide { to { transform: translateX(-50%); } }
+
+  section { padding: 120px 0; } h2 { font-size: 52px; line-height: 1.1; margin-bottom: 48px; max-width: 760px; }
+  .stack { display: grid; gap: 24px; }
+  .card { position: sticky; top: 100px; min-height: 260px; padding: 40px; border-radius: 30px; overflow: hidden; display: grid; grid-template-columns: 80px 1fr; gap: 24px; }
+  .card .n { font-size: 15px; color: var(--mute); } .card h3 { font-size: 30px; margin-bottom: 12px; } .card p { color: var(--mute); max-width: 560px; }
+  .orb { position: absolute; right: 48px; top: 40px; width: 160px; height: 160px; background: var(--line); opacity: .55;
+    border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; animation: morph 9s ease-in-out infinite alternate; }
+  @keyframes morph { to { border-radius: 64% 36% 41% 59% / 58% 63% 37% 42%; transform: rotate(40deg); } }
+
+  .ai { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .persona { position: relative; height: 460px; border-radius: 34px; background: var(--card); }
+  .chip { position: absolute; padding: 12px 18px; background: #fff; border-radius: 99px; box-shadow: 0 10px 30px rgb(63 59 74 / .12); animation: float 5s ease-in-out infinite alternate; }
+  .chip.a { left: 32px; top: 60px; } .chip.b { right: 32px; bottom: 80px; animation-duration: 6s; }
+  @keyframes float { to { transform: translateY(-9px); } }
+  .chat { display: grid; gap: 14px; }
+  .msg { max-width: 420px; padding: 16px 20px; border-radius: 22px; animation: pop .5s cubic-bezier(.2,.8,.2,1) both; }
+  .msg.user { justify-self: end; background: var(--dark); color: #fff; } .msg.bot { background: var(--card); }
+  .msg:nth-child(1) { animation-delay: .4s; } .msg:nth-child(2) { animation-delay: 1.4s; } .msg:nth-child(3) { animation-delay: 2.6s; }
+  @keyframes pop { from { opacity: 0; transform: translateY(12px) scale(.96); } }
+
+  .periods { display: inline-flex; padding: 6px; background: var(--card); border-radius: 99px; margin-bottom: 40px; }
+  .periods button { border: 0; background: none; font: inherit; padding: 10px 22px; border-radius: 99px; cursor: pointer; color: var(--mute); }
+  .periods button.on { background: #fff; color: var(--ink); box-shadow: 0 4px 12px rgb(0 0 0 / .06); }
+  .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .plan { padding: 36px; border-radius: 30px; background: #fff; border: 1px solid #ece8f3; transition: transform .35s ease, box-shadow .35s ease; }
+  .plan:hover { transform: translateY(-8px); box-shadow: 0 24px 48px rgb(63 59 74 / .12); }
+  .plan.featured { background: var(--dark); color: #fff; border: 0; }
+  .plan .price { font-size: 48px; font-weight: 700; margin: 16px 0 24px; } .plan ul { padding-left: 18px; color: inherit; opacity: .8; }
+
+  details { border-bottom: 1px solid #e6e1ee; padding: 24px 0; }
+  summary { list-style: none; display: flex; justify-content: space-between; font-size: 22px; font-weight: 500; cursor: pointer; }
+  summary .plus { transition: transform .3s ease; } details[open] summary .plus { transform: rotate(135deg); }
+  details p { margin-top: 14px; color: var(--mute); max-width: 720px; }
+
+  .cabinet { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .gate { filter: blur(8px); transition: filter .8s ease; } .cabinet.in .gate { filter: none; }
+  .login { position: absolute; inset: 0; display: grid; place-items: center; transition: opacity .4s; } .cabinet.in .login { opacity: 0; pointer-events: none; }
+  .login .box { background: #fff; padding: 32px; border-radius: 30px; box-shadow: 0 30px 60px rgb(63 59 74 / .15); display: grid; gap: 12px; width: 360px; }
+  .panel { padding: 32px; border-radius: 30px; background: var(--card); min-height: 240px; }
+  .ring circle { fill: none; stroke-width: 12; } .ring .bar { stroke: var(--vita); stroke-linecap: round; stroke-dasharray: 377; stroke-dashoffset: 242; animation: ring 1.8s ease-out both; }
+  @keyframes ring { from { stroke-dashoffset: 377; } }
+  footer { padding: 100px 0 40px; background: var(--dark); color: #fff; } footer .big { font-size: 180px; font-weight: 700; line-height: 1; opacity: .12; margin-top: 60px; }
+</style>
+</head>
+<body>
+  <nav class="top">
+    <a class="brand" href="#top"><b>Vita</b><i>Fem</i></a>
+    <div class="links"><a href="#why">Почему мы</a><a href="#ai">AI-помощница</a><a href="#pricing">Тарифы</a><a href="#faq">Вопросы</a></div>
+    <a class="btn dark" href="#cabinet">Личный кабинет</a>
+  </nav>
+  <div class="glow"></div>
+
+  <header class="wrap hero" id="top">
+    <div>
+      <div class="eyebrow">Приложение для цикла и самочувствия</div>
+      <h1>
+        <span class="ln"><span class="w"><span>Слышать</span></span> <span class="w"><span style="animation-delay:.07s">себя</span></span></span>
+        <span class="ln mute"><span class="w"><span style="animation-delay:.14s">в</span></span> <span class="w"><span style="animation-delay:.21s">ритме</span></span></span>
+        <span class="ln"><span class="accent">своего цикла</span></span>
+      </h1>
+      <p class="lead">Бережный помощник для цикла, энергии и ежедневного самочувствия. Без оценок, с приватностью и AI-помощницей рядом.</p>
+      <a class="btn light" href="#pricing">Выбрать тариф</a> <a class="btn dark" href="#why">Почему мы</a>
+    </div>
+    <div class="marble">
+      <svg viewBox="0 0 400 560" preserveAspectRatio="none"><filter id="liq"><feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="3">
+        <animate attributeName="baseFrequency" dur="34s" values="0.008;0.014;0.008" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" scale="80"/></filter>
+        <rect width="400" height="560" fill="#fff" opacity=".35" filter="url(#liq)"/></svg>
+      <div class="vert">vitafem</div><div class="label">/ 2026</div>
+    </div>
+  </header>
+
+  <div class="marquee"><div class="track">
+    <span>Цикл</span><span>Сон</span><span>Энергия</span><span>Настроение</span><span>Симптомы</span><span>AI-помощница</span>
+    <span>Цикл</span><span>Сон</span><span>Энергия</span><span>Настроение</span><span>Симптомы</span><span>AI-помощница</span>
+  </div></div>
+
+  <section class="wrap" id="why">
+    <div class="eyebrow">Почему VitaFem</div><h2>Сделано для женщин и для твоего ритма</h2>
+    <div class="stack">
+      <div class="card" style="background:linear-gradient(135deg,#f3dfe9,#e3d6f3)"><div class="n">01</div><div><h3>Цикл в центре, а не в углу</h3><p>Фазы, овуляция и самочувствие по дням.</p></div><div class="orb"></div></div>
+      <div class="card" style="background:linear-gradient(135deg,#dfe3f6,#e9e0f7)"><div class="n">02</div><div><h3>Приватность по умолчанию</h3><p>Личные закономерности остаются твоими.</p></div><div class="orb"></div></div>
+    </div>
+  </section>
+
+  <section class="wrap ai" id="ai">
+    <div class="persona"><span class="chip a">Как ты сегодня?</span><span class="chip b">Я рядом ✦</span></div>
+    <div><div class="eyebrow">AI-помощница</div><h2>Она слышит, когда нужно</h2>
+      <div class="chat"><div class="msg user">Почему сегодня мало энергии?</div><div class="msg bot">Похоже, ты в лютеиновой фазе. Попробуем мягкий вечер?</div><div class="msg user">Да, подскажи ритуал</div></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="pricing">
+    <div class="eyebrow">Тарифы</div><h2>Выбери свой ритм заботы</h2>
+    <div class="periods"><button class="on" data-p="month">Месяц</button><button data-p="year">Год · −30%</button></div>
+    <div class="plans">
+      <div class="plan"><b>Старт</b><div class="price" data-month="0" data-year="0">0 ₽</div><ul><li>Календарь и прогноз цикла</li><li>Ежедневный check-in</li></ul></div>
+      <div class="plan featured"><b>VitaFem+</b><div class="price" data-month="399" data-year="279">399 ₽</div><ul><li>AI-помощница без ограничений</li><li>Отчёт для визита к врачу</li></ul></div>
+      <div class="plan"><b>Для двоих</b><div class="price" data-month="699" data-year="489">699 ₽</div><ul><li>Два аккаунта по одной подписке</li><li>Приоритетная поддержка</li></ul></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="faq">
+    <div class="eyebrow">Вопросы</div><h2>Частые вопросы</h2>
+    <details><summary>Заменяет ли AI-помощница врача? <span class="plus">+</span></summary><p>Нет. Она помогает лучше слышать себя, но не ставит диагнозы.</p></details>
+    <details><summary>Можно ли отменить подписку? <span class="plus">+</span></summary><p>Да, в любой момент в личном кабинете.</p></details>
+  </section>
+
+  <section class="wrap" id="cabinet">
+    <div class="eyebrow">Личный кабинет</div><h2>Всё о тебе в одном месте</h2>
+    <div class="cabinet">
+      <div class="panel gate"><svg class="ring" width="140" height="140" viewBox="0 0 140 140"><circle cx="70" cy="70" r="60" stroke="#e6e1ee"/><circle class="bar" cx="70" cy="70" r="60" transform="rotate(-90 70 70)"/></svg><p>День 10 из 28 · Фолликулярная фаза</p></div>
+      <div class="panel gate"><h3>Привет, Карина</h3><p>Тариф VitaFem+, следующее списание 10 ноября.</p></div>
+      <div class="login"><div class="box"><b>Войти в кабинет</b><span style="color:var(--mute)">karina@mail.ru</span><button class="btn dark" id="enter" style="border:0;font:inherit">Войти</button></div></div>
+    </div>
+  </section>
+
+  <footer><div class="wrap"><h2>Начни с первого дня цикла</h2><a class="btn light" href="#pricing">Скачать VitaFem</a><div class="big">VitaFem</div></div></footer>
+
+<script>
+  document.querySelectorAll('.periods button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.periods button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      document.querySelectorAll('.price').forEach(function (p) { p.textContent = p.dataset[b.dataset.p] + ' ₽'; });
+    });
+  });
+  document.getElementById('enter').addEventListener('click', function () { document.querySelector('.cabinet').classList.add('in'); });
+  var glow = document.querySelector('.glow');
+  addEventListener('mousemove', function (e) { glow.style.transform = 'translate(' + (e.clientX - 160) + 'px,' + (e.clientY - 160) + 'px)'; });
+</script>
+</body>
+</html>
